@@ -1,110 +1,89 @@
 import React, { useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-material.css";
-import { Button } from "@mui/material";
-import EditTraining from "./EditTraining";
-import AddTraining from "./AddTraining";
-import moment from "moment/moment";
+import "ag-grid-community/dist/styles/ag-grid.css";
+import "ag-grid-community/dist/styles/ag-theme-material.css";
+import { IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import dayjs from "dayjs";
 
 export default function TrainingList() {
   const [trainings, setTrainings] = useState([]);
-
-  const [columnDefs] = useState([
-    {
-      field: "date",
-      sortable: true,
-      filter: true,
-      cellRenderer: (data) => {
-        return moment(data.createdAt).format("DD/MM/YY HH:mm");
-      },
-    },
-    { field: "duration", sortable: true, filter: true },
-    { field: "activity", sortable: true, filter: true },
-    {
-      width: 150,
-      cellRenderer: (params) => (
-        <EditTraining data={params.data} updateTraining={updateTraining} />
-      ),
-    },
-    {
-      cellRenderer: (params) => (
-        <Button
-          color="error"
-          size="small"
-          onClick={() => deleteTraining(params.data)}
-        >
-          Delete
-        </Button>
-      ),
-    },
-  ]);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     getTrainings();
   }, []);
 
   const getTrainings = () => {
-    fetch("https://customerrest.herokuapp.com/api/trainings")
-      .then((response) => {
-        if (response.ok) return response.json();
-        else alert("Something went wrong");
-      })
-      .then((data) => {
-        setTrainings(data.content);
-        console.log(data);
-      })
-      .catch((err) => console.error);
-  };
-
-  const addTraining = (training) => {
-    fetch("https://customerrest.herokuapp.com/api/trainings", {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify(training),
-    })
-      .then((response) => {
-        if (response.ok) getTrainings();
-        else alert("Something went wrong when adding a training");
-      })
+    fetch("https://customerrest.herokuapp.com/gettrainings")
+      .then((response) => response.json())
+      .then((data) => setTrainings(data))
       .catch((err) => console.error(err));
   };
 
-  const deleteTraining = (data) => {
+  const deleteTraining = (id) => {
     if (window.confirm("Are you sure?")) {
-      fetch(data._links.training.href, { method: "DELETE" })
-        .then((response) => {
-          if (response.ok) getTrainings();
-          else alert("Something went wrong in deletion");
-        })
-        .catch((err) => console.error(err));
+      fetch("https://customerrest.herokuapp.com/api/trainings/" + id, {
+        method: "DELETE",
+      }).then((response) => {
+        if (response.ok) {
+          console.log("Training was deleted successfully");
+          setOpen(true);
+          getTrainings();
+        } else {
+          alert("Something went wrong!");
+        }
+      });
     }
   };
 
-  const updateTraining = (training, url) => {
-    fetch(url, {
-      method: "PUT",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify(training),
-    })
-      .then((response) => {
-        if (response.ok) getTrainings();
-        else alert("Something went wrong when editing");
-      })
-      .catch((err) => console.error(err));
+  const customerName = (params) => {
+    console.log(params);
+    return params.data.customer.firstname + " " + params.data.customer.lastname;
   };
+
+  const columns = [
+    { field: "activity", sortable: true, filter: true, width: 150 },
+    { field: "duration", sortable: true, filter: true, width: 140 },
+    {
+      field: "date",
+      sortable: true,
+      filter: true,
+      width: 160,
+      valueFormatter: (params) =>
+        dayjs(params.value).format("DD.MM.YYYY HH:mm"),
+    },
+    {
+      headerName: "Customer",
+      valueGetter: customerName,
+      width: 160,
+    },
+    {
+      headerName: "",
+      width: 90,
+      field: "links.0.href",
+      cellRenderer: (params) => (
+        <IconButton
+          color="error"
+          onClick={() => deleteTraining(params.data.id)}
+        >
+          <DeleteIcon />
+        </IconButton>
+      ),
+    },
+  ];
 
   return (
     <div
       className="ag-theme-material"
-      style={{ height: 650, width: "90%", margin: "auto" }}
+      style={{ height: "600px", width: "70%" }}
     >
-      <AddTraining addTraining={addTraining} />
       <AgGridReact
+        columnDefs={columns}
         rowData={trainings}
-        columnDefs={columnDefs}
         pagination={true}
         paginationPageSize={10}
+        suppressCellFocus={true}
       />
     </div>
   );
