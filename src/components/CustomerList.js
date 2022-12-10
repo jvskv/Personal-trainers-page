@@ -141,6 +141,7 @@ export default function CustomerList() {
       </IconButton>
       <AddCustomer addCustomer={addCustomer} />
       <AgGridReact
+        ref={gridRef}
         columnDefs={columns}
         rowData={customers}
         pagination={true}
