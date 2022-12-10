@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/dist/styles/ag-grid.css";
 import "ag-grid-community/dist/styles/ag-theme-material.css";
-import { IconButton } from "@mui/material";
+import { Button, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
 export default function TrainingList() {
   const [trainings, setTrainings] = useState([]);
   const [open, setOpen] = useState(false);
+  const gridRef = useRef();
+
+  const onExportClick = useCallback(() => {
+    gridRef.current.api.exportDataAsCsv();
+  }, []);
 
   useEffect(() => {
     getTrainings();
@@ -78,6 +84,10 @@ export default function TrainingList() {
       className="ag-theme-material"
       style={{ height: "600px", width: "70%" }}
     >
+      <IconButton id="Exportbutton2" onClick={() => onExportClick()}>
+        <FileDownloadIcon />
+        Export
+      </IconButton>
       <AgGridReact
         columnDefs={columns}
         rowData={trainings}

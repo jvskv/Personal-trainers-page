@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "ag-grid-community/dist/styles/ag-grid.css";
 import "ag-grid-community/dist/styles/ag-theme-material.css";
 import { AgGridReact } from "ag-grid-react";
@@ -7,10 +7,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddCustomer from "./AddCustomer";
 import EditCustomer from "./EditCustomer";
 import AddTraining from "./AddTraining";
+import { Button } from "@mui/material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
   const [open, setOpen] = React.useState(false);
+  const gridRef = useRef();
 
   const columns = [
     { field: "firstname", sortable: true, filter: true, width: 140 },
@@ -50,6 +53,10 @@ export default function CustomerList() {
 
   useEffect(() => {
     getCustomers();
+  }, []);
+
+  const onExportClick = useCallback(() => {
+    gridRef.current.api.exportDataAsCsv();
   }, []);
 
   const getCustomers = () => {
@@ -128,6 +135,10 @@ export default function CustomerList() {
 
   return (
     <div className="ag-theme-material" style={{ height: 600, width: "90%" }}>
+      <IconButton id="Exportbutton" onClick={() => onExportClick()}>
+        <FileDownloadIcon />
+        Export
+      </IconButton>
       <AddCustomer addCustomer={addCustomer} />
       <AgGridReact
         columnDefs={columns}
